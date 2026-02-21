@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chat for Fun</title>
+
+<style>
+    body {
+        margin: 0;
+        background-color: #FFFFFF; 
+        color: #333333;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+    }
+
+    .header {
+        padding: 16px;
+        text-align: center;
+        font-weight: 700;
+        font-size: 20px;
+        background: linear-gradient(135deg, #AE2FA8, #943CB5); 
+        color: #FFFFFF;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        z-index: 10;
+    }
+
+    .chat-container {
+        flex: 1;
+        padding: 24px;
+        overflow-y: auto;
+        display: flex;
+        flex-direction: column;
+        gap: 18px;
+    }
+
+    .message {
+        max-width: 75%;
+        line-height: 1.5;
+        white-space: pre-wrap;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    }
+
+    .user {
+        align-self: flex-end;
+        background-color: #943CB5; 
+        color: #FFFFFF;
+        padding: 14px 18px;
+        border-radius: 18px 18px 0px 18px;
+    }
+
+    .bot {
+        align-self: flex-start;
+        background-color: #AE2FA8; 
+        color: #FFFFFF;
+        padding: 14px 18px;
+        border-radius: 18px 18px 18px 0px;
+    }
+
+    .input-container {
+        padding: 16px;
+        background-color: #FFFFFF;
+        border-top: 2px solid #f0f0f0;
+    }
+
+    .input-box {
+        display: flex;
+        background-color: #FFFFFF;
+        border: 2px solid #AE2FA8; 
+        border-radius: 25px;
+        padding: 8px 16px;
+        box-shadow: 0 2px 8px rgba(174, 47, 168, 0.1);
+    }
+
+    input {
+        flex: 1;
+        background: transparent;
+        border: none;
+        outline: none;
+        color: #333333;
+        font-size: 16px;
+    }
+
+    input::placeholder {
+        color: #aaa;
+    }
+
+    button {
+        background: #943CB5;
+        border: none;
+        color: #FFFFFF;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 14px;
+        padding: 8px 16px;
+        border-radius: 20px;
+        margin-left: 10px;
+        transition: background 0.2s;
+    }
+
+    button:hover {
+        background: #AE2FA8;
+    }
+
+    .thinking {
+        opacity: 0.7;
+        font-style: italic;
+    }
+
+    .cursor {
+        display: inline-block;
+        width: 6px;
+        background-color: #FFFFFF;
+        margin-left: 4px;
+        animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+        0% { opacity: 1; }
+        50% { opacity: 0; }
+        100% { opacity: 1; }
+    }
+</style>
+</head>
+
+<body>
+
+<div class="header">Chat for Fun ✨</div>
+<div class="chat-container" id="chat"></div>
+
+<div class="input-container">
+    <div class="input-box">
+        <input type="text" id="messageInput" placeholder="Say something sweet..." autocomplete="off" />
+        <button id="sendBtn">Send</button>
+    </div>
+</div>
+
+<script>
+    // Wait for the page to fully load before running the script
+    document.addEventListener('DOMContentLoaded', () => {
+        const chat = document.getElementById("chat");
+        const input = document.getElementById("messageInput");
+        const sendBtn = document.getElementById("sendBtn");
+
+        // Safely load saved history
+        try {
+            const saved = JSON.parse(localStorage.getItem("chatForFunHistory")) || [];
+            saved.forEach(msg => addMessage(msg.text, msg.sender, false));
+        } catch (e) {
+            console.log("No previous chat history found or storage was cleared.");
+        }
+
+        function saveMessage(text, sender) {
+            try {
+                const history = JSON.parse(localStorage.getItem("chatForFunHistory")) || [];
+                history.push({ text, sender });
+                localStorage.setItem("chatForFunHistory", JSON.stringify(history));
+            } catch (e) {
+                console.log("Could not save to local storage.");
+            }
+        }
+
+        function addMessage(text, sender, save = true) {
+            const message = document.createElement("div");
+            message.classList.add("message", sender);
+            message.textContent = text;
+            chat.appendChild(message);
+            chat.scrollTop = chat.scrollHeight;
+
+            if (save) saveMessage(text, sender);
+        }
+
+        function typeMessage(text, element, callback) {
+            let i = 0;
+            element.textContent = "";
+            const cursor = document.createElement("span");
+            cursor.classList.add("cursor");
+            element.appendChild(cursor);
+
+            function typing() {
+                if (i < text.length) {
+                    element.insertBefore(document.createTextNode(text[i]), cursor);
+                    i++;
+                    setTimeout(typing, 35); 
+                } else {
+                    cursor.remove();
+                    if (callback) callback();
+                }
+            }
+            typing();
+        }
+
+        function getLogicalReply(userText) {
+            const text = userText.toLowerCase();
+
+            if (text.match(/\b(hi|hello|hey|heyy)\b/)) {
+                return "Hii! Kaise ho? So glad you messaged. ✨";
+            } 
+            else if (text.includes("how are you") || text.includes("kaise ho") || text.includes("kya haal")) {
+                return "Main toh bilkul theek hoon, par tumse baat karke aur achi ho gayi. Tum batao? 😉";
+            } 
+            else if (text.includes("beautiful") || text.includes("cute") || text.includes("pretty") || text.includes("hot")) {
+                return "Aww, stop it! Blush karwa rahe ho mujhe. Tum bhi bohot cute ho. 💖";
+            } 
+            else if (text.includes("love") || text.includes("pyaar") || text.includes("miss you")) {
+                return "Acha ji? Itni jaldi? Let's see if you can handle my tantrums first! 😘";
+            } 
+            else if (text.includes("name") || text.includes("naam")) {
+                return "Naam mein kya rakha hai? Just call me yours. 😉 Joking, I'm your favorite chat buddy.";
+            } 
+            else if (text.includes("doing") || text.includes("kar rahi") || text.includes("busy")) {
+                return "Bus tumhare message ka wait kar rahi thi. Aur tum kya kar rahe ho? 👀";
+            } 
+            else if (text.includes("dinner") || text.includes("khana") || text.includes("eat")) {
+                return "Kha liya! Tumne khaya ya main apne haathon se khilaun? Jk 😂";
+            } 
+            else if (text.includes("bye") || text.includes("night") || text.includes("sleep")) {
+                return "Aise kaise bye? Acha theek hai, sweet dreams. Jaldi message karna wapas! 🌸";
+            } 
+            else {
+                const fallbacks = [
+                    "Hmm, interesting! Tell me more, mujhe tumhari baatein sunna accha lagta hai. 💕",
+                    "Accha? Phir kya hua? 🤭",
+                    "You're distracting me! Par mujhe accha lag raha hai. ✨",
+                    "Kuch bhi bolte ho! But cute lagte ho bolte hue. 💕"
+                ];
+                return fallbacks[Math.floor(Math.random() * fallbacks.length)];
+            }
+        }
+
+        function sendMessage() {
+            const text = input.value.trim();
+            if (text === "") return;
+
+            addMessage(text, "user");
+            input.value = "";
+
+            const thinking = document.createElement("div");
+            thinking.classList.add("message", "bot", "thinking");
+            thinking.textContent = "Typing...";
+            chat.appendChild(thinking);
+            chat.scrollTop = chat.scrollHeight;
+
+            const delay = Math.floor(Math.random() * 1000) + 1000;
+            
+            setTimeout(() => {
+                thinking.remove();
+
+                const botMessage = document.createElement("div");
+                botMessage.classList.add("message", "bot");
+                chat.appendChild(botMessage);
+
+                const reply = getLogicalReply(text);
+
+                typeMessage(reply, botMessage, () => {
+                    saveMessage(reply, "bot");
+                });
+
+                chat.scrollTop = chat.scrollHeight;
+
+            }, delay);
+        }
+
+        // Attach event listeners purely in JavaScript
+        sendBtn.addEventListener("click", sendMessage);
+
+        input.addEventListener("keypress", function(e) {
+            if (e.key === "Enter") {
+                e.preventDefault(); // Prevents default form submission behavior
+                sendMessage();
+            }
+        });
+    });
+</script>
+
+</body>
+</html>
